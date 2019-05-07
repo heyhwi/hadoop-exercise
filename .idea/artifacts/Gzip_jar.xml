@@ -1,0 +1,8 @@
+<component name="ArtifactManager">
+  <artifact type="jar" name="Gzip:jar">
+    <output-path>$PROJECT_DIR$/out/artifacts/Gzip_jar</output-path>
+    <root id="archive" name="hadoopTestArtifact.jar">
+      <element id="module-output" name="hadoopTestArtifact" />
+    </root>
+  </artifact>
+</component>
