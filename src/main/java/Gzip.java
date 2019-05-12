@@ -9,6 +9,7 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.IOUtils;
 import org.apache.hadoop.io.compress.CompressionCodec;
 import org.apache.hadoop.io.compress.CompressionOutputStream;
+import org.apache.hadoop.io.compress.GzipCodec;
 import org.apache.hadoop.util.ReflectionUtils;
 
 
@@ -18,15 +19,18 @@ public class Gzip {
         String uri = "hdfs://hwi:9000";
         Path inputDir = new Path(uri+args[0]);
         Path outDir = new Path(args[1]);
-        String codecClassname = "org.apache.hadoop.io.compress.GzipCodec";
-        Class<?> codecClass = Class.forName(codecClassname);
-        CompressionCodec codec = (CompressionCodec) ReflectionUtils.newInstance(codecClass,conf);
+//        String codecClassname = "org.apache.hadoop.io.compress.GzipCodec";
+//        Class<?> codecClass = Class.forName(codecClassname);
+//        CompressionCodec gzipCodec = (CompressionCodec) ReflectionUtils.newInstance(codecClass,conf);
+        GzipCodec gzipCodec = new GzipCodec();
+        gzipCodec.setConf(conf);//作用和如上注释代码相同
+
         try{
             FileSystem hdfs = FileSystem.get(new URI(uri), conf);
             FileSystem local = FileSystem.getLocal(conf);
             FileStatus[] inputFiles = hdfs.listStatus(inputDir);
             FSDataOutputStream FSOut = local.create(outDir);
-            CompressionOutputStream out = codec.createOutputStream(FSOut);
+            CompressionOutputStream out = gzipCodec.createOutputStream(FSOut);
             for(int i=0; i<inputFiles.length; i++){
                 System.out.println(inputFiles[i].getPath().getName());
                 FSDataInputStream in = hdfs.open(inputFiles[i].getPath());
