@@ -21,14 +21,14 @@ public class MRPreDefined {
 
         FileInputFormat.setInputPaths(job, new Path("testdata/input3"));
         FileOutputFormat.setOutputPath(job, new Path("testdata/output0514/4"));
-        
+
         //test1 直接输出
 //        job.setOutputKeyClass(LongWritable.class);	//输出Key的数据类型
 //        job.setOutputValueClass(Text.class);			//输出Value的数据类型
 //        job.setMapperClass(Mapper.class);				//预定义
 //        job.setReducerClass(Reducer.class);			//预定义
-        
-        
+
+
         //test2 逆转输出
 //        job.setOutputKeyClass(Text.class);             //输出Key的数据类型
 //        job.setOutputValueClass(LongWritable.class);   //输出Value的数据类型

@@ -5,7 +5,7 @@
       <paths name="hwi">
         <serverdata>
           <mappings>
-            <mapping local="$PROJECT_DIR$" web="/" />
+            <mapping deploy="/work" local="$PROJECT_DIR$/out/artifacts/test" web="/" />
           </mappings>
         </serverdata>
       </paths>
