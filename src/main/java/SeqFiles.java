@@ -10,9 +10,9 @@ import org.apache.hadoop.util.ReflectionUtils;
 public class SeqFiles {
     public static void main(String[] args) throws IOException {
 //        SeqGen();
-//        FindFileFromSeq("file59");
-//        GetDataByKey(23);
-        GetDataByKeyAndFilename(23,"file90");
+//        GetFileFromSeq("file59");
+        GetDataByKey(23);
+//          GetDataByKeyAndFilename(23,"file90");
     }
 
     static void SeqGen() throws IOException {
