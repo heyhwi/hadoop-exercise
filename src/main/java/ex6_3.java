@@ -19,7 +19,7 @@ public class ex6_3 {
     public static class Ex6Mapper extends Mapper<Object, Text, Text, LongWritable> {
         @Override
         public void map(Object key, Text value, Mapper<Object, Text, Text, LongWritable>.Context context) throws IOException, InterruptedException {
-            String filename = ((FileSplit) context.getInputSplit()).getPath().getName();            context.write(new Text(filename), new LongWritable(Long.parseLong(value.toString())));
+            String filename = ((FileSplit) context.getInputSplit()).getPath().getName();
             context.write(new Text(filename), new LongWritable(Long.parseLong(value.toString())));
             System.out.println("MapperÊä³ö<" + filename + "," + value.toString() + ">");
         }

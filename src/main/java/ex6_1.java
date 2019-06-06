@@ -34,10 +34,8 @@ public class ex6_1 {
             for (LongWritable tempNum:values
                  ) {
                 long num = Long.parseLong(tempNum.toString());
-                if(num > max)
-                    max = num;
-                if(num < min)
-                    min = num;
+                max = Math.max(max,num);
+                min = Math.min(min,num);
                 sum += num;
                 count++;
                 System.out.println("ReducerÊäÈë¼üÖµ¶Ô<" + key.toString() + ","
@@ -57,7 +55,7 @@ public class ex6_1 {
             System.err.println("Usage: ex6_1 <in> [<in>...] <out>");
             System.exit(2);
         }
-
+        System.out.println("\n\n\n\n\n\n\n\n\n\n\n\n");
         Job job = Job.getInstance(conf, "ex6_1");
         job.setJarByClass(ex6_1.class);
         job.setMapperClass(Ex6Mapper.class);
