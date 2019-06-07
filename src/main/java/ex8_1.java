@@ -23,7 +23,6 @@ public class ex8_1 {
             if(line.contains("addressId")){
                 return;
             }
-
             StringTokenizer iter = new StringTokenizer(line);
             String mkey = new String();
             String mvalue = new String();
@@ -32,18 +31,14 @@ public class ex8_1 {
                 String token = iter.nextToken();
                 if(token.charAt(0)>='0' && token.charAt(0)<='9'){
                     mkey = token;
-                    if(i > 0)
-                        type = "1";
-                    else
-                        type = "2";
-//                    type = (i > 0) ? "1" : "2";
+                    type = i > 0 ? "1" : "2"; //1-left 2-right
                     continue;
                 }
                 mvalue += token + " ";
                 i++;
             }
             mvalue = mvalue.trim();
-            context.write(new Text(mkey), new Text(type+"+"+mvalue));
+            context.write(new Text(mkey), new Text(type+"-"+mvalue));
         }
     }
 
@@ -64,29 +59,36 @@ public class ex8_1 {
             while (iter.hasNext()) {
                 String record = iter.next().toString();
                 int len = record.length();
-                int i = 2;
                 if (0 == len)
                     continue;
 
                 char relationtype = record.charAt(0);
                 //left
                 if ('1' == relationtype) {
-                    factory[factorynum] = record.substring(i);
+                    factory[factorynum] = record.substring(2);
                     factorynum++;
                 }
                 if ('2' == relationtype) {
-                    address[addressnum] = record.substring(i);
+                    address[addressnum] = record.substring(2);
                     addressnum++;
                 }
             }
-
-            if(0!=factorynum && 0!=addressnum){
-                for(int m=0; m<factorynum; m++){
-                    for (int n=0; n<addressnum; n++){
-                        context.write(new Text(factory[m]), new Text(key.toString()+"\t"+address[n]));
+            if (0 != factorynum && 0 != addressnum) {
+                for (int m = 0; m < factorynum; m++) {
+                    for (int n = 0; n < addressnum; n++) {
+                        System.out.println(factory[m] + '\t' + key.toString() + address[n]);
+                        context.write(new Text(factory[m]), new Text(key.toString() + "\t" + address[n]));
                     }
                 }
             }
+//            //left join
+//            if (0 != factorynum && 0 == addressnum) {
+//                context.write(new Text(factory[0]), new Text("NULL"));
+//            }
+//            //right join
+//            if (0 == factorynum && 0 != addressnum) {
+//                context.write(new Text("NULL"),new Text(key.toString() + "\t" +address[0]) );
+//            }
         }
     }
 
