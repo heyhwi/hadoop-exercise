@@ -2,14 +2,11 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.conf.Configured;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.*;
-import org.apache.hadoop.mapreduce.Partitioner;
+import org.apache.hadoop.mapreduce.*;
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 import org.apache.hadoop.mapreduce.lib.input.KeyValueLineRecordReader;
 import org.apache.hadoop.mapreduce.lib.input.KeyValueTextInputFormat;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
-import org.apache.hadoop.mapreduce.Job;
-import org.apache.hadoop.mapreduce.Mapper;
-import org.apache.hadoop.mapreduce.Reducer;
 import org.apache.hadoop.mapreduce.lib.partition.InputSampler;
 import org.apache.hadoop.mapreduce.lib.partition.TotalOrderPartitioner;
 import org.apache.hadoop.util.GenericOptionsParser;
@@ -117,24 +114,23 @@ public class SecondarySort extends Configured implements Tool{
         }
     }
 
-    public static class SecondarySortMapper extends Mapper<Object, IntWritable, KeyPair, IntWritable> {
-        private KeyPair keyPair = new KeyPair();
-        private IntWritable key1 = new IntWritable();
-        private IntWritable key2 = new IntWritable();
+    public static class SecondarySortMapper extends Mapper<Text, Text, KeyPair, IntWritable> {
 
         @Override
-        protected void map(Object key, IntWritable value, Context context) throws IOException, InterruptedException {
-            String[] tmp = value.toString().split("\t");
-            key1.set(Integer.parseInt(tmp[0]));
-            key2.set(Integer.parseInt(tmp[1]));
-
+        protected void map(Text key, Text value, Context context) throws IOException, InterruptedException {
+//            String[] tmp = value.toString().split("\t");
+             KeyPair keyPair = new KeyPair();
+             IntWritable key1 = new IntWritable(Integer.parseInt(key.toString()));
+             IntWritable key2 = new IntWritable(Integer.parseInt(value.toString()));
+//            key1.set(Integer.parseInt(tmp[0]));
+//            key2.set(Integer.parseInt(tmp[1]));
             keyPair.setKey1(key1);
             keyPair.setKey2(key2);
             context.write(keyPair, key2);
         }
     }
 
-    public static class SecondarySortReducer extends Reducer<KeyPair, IntWritable, IntWritable, Text> {
+    public static class SecondarySortReducer extends Reducer<KeyPair, IntWritable, Text, Text> {
         StringBuffer stringBuffer = new StringBuffer();
         Text reduceVal = new Text();
         @Override
@@ -147,9 +143,10 @@ public class SecondarySort extends Configured implements Tool{
                 stringBuffer.deleteCharAt(stringBuffer.length()-1);
 
             reduceVal.set(stringBuffer.toString());
-            context.write(key.getKey1(),reduceVal);
+            context.write(new Text(key.getKey1().toString()),reduceVal);
         }
     }
+
 
     public int run(String[] args) throws Exception {
         if (args.length < 2) {
@@ -157,8 +154,8 @@ public class SecondarySort extends Configured implements Tool{
             System.exit(127);
         }
         Configuration conf = new Configuration();
-        conf.set(KeyValueLineRecordReader.KEY_VALUE_SEPERATOR, "\t");
         Job job = Job.getInstance(conf, "SecondarySort");
+        job.setInputFormatClass(KeyValueTextInputFormat.class);
         job.setJarByClass(SecondarySort.class);
         for (int i = 0; i < args.length - 1; ++i) {
             FileInputFormat.addInputPath(job, new Path(args[i]));
@@ -171,11 +168,11 @@ public class SecondarySort extends Configured implements Tool{
         job.setMapOutputKeyClass(KeyPair.class);
         job.setMapOutputValueClass(IntWritable.class);
 
-//        job.setPartitionerClass(SecondarySortPartitioner.class);
+        job.setPartitionerClass(SecondarySortPartitioner.class);
         job.setNumReduceTasks(1);
 
         job.setReducerClass(SecondarySortReducer.class);
-        job.setOutputKeyClass(IntWritable.class);
+        job.setOutputKeyClass(Text.class);
         job.setOutputValueClass(Text.class);
 
         job.setSortComparatorClass(SecondarySortComparator.class);

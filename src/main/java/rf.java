@@ -13,7 +13,7 @@ public class rf {
         int numOfFiles = 100;
         int numOfRecorders = 100000;
         //本地文件位置，修改合適的位置
-        String uri = "/home/cloud/work/files_Random_v2";
+        String uri = "/home/cloud/work/files_Random";
         FileOutputStream fout = null;
         Random ra = new Random();
         try {
@@ -23,8 +23,8 @@ public class rf {
                 List<String> list = new ArrayList<String>();
                 for (int j = 0; j < numOfRecorders; j++)
 //                    list.add(ra.nextInt(numOfRecorders) + 1 + "\t" + "the recorder #" + j + " in file#" + i);
-//                    list.add(Integer.toString(ra.nextInt(100000))+'\t'+Integer.toString(ra.nextInt(100)));
-                    list.add(ra.nextInt(100000) + 1 + "\t" + ra.nextInt(100) + 1 + "\t"+ "the recorder #" + j + " in file#" + i);
+                    list.add(Integer.toString(ra.nextInt(100000)+1)+'\t'+Integer.toString(ra.nextInt(100)+1));
+//                    list.add(ra.nextInt(100000) + 1 + "\t" + ra.nextInt(100) + 1 + "\t"+ "the recorder #" + j + " in file#" + i);
                 PrintStream pStream = new PrintStream(new BufferedOutputStream(fout));
                 for (String str : list) {
                     pStream.println(str);
