@@ -1,11 +1,13 @@
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.conf.Configured;
+import org.apache.hadoop.fs.FSDataInputStream;
+import org.apache.hadoop.fs.FileStatus;
+import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.io.IntWritable;
-import org.apache.hadoop.io.NullWritable;
-import org.apache.hadoop.io.Text;
+import org.apache.hadoop.io.*;
 import org.apache.hadoop.mapreduce.Partitioner;
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
+import org.apache.hadoop.mapreduce.lib.input.FixedLengthInputFormat;
 import org.apache.hadoop.mapreduce.lib.input.KeyValueTextInputFormat;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 import org.apache.hadoop.mapreduce.Job;
@@ -16,9 +18,12 @@ import org.apache.hadoop.mapreduce.lib.partition.TotalOrderPartitioner;
 import org.apache.hadoop.util.GenericOptionsParser;
 import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
+import sun.awt.SunGraphicsCallback;
 
 import javax.imageio.IIOException;
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.util.Iterator;
 import java.util.StringTokenizer;
 public class SuperSort extends Configured implements Tool {
@@ -55,7 +60,38 @@ public class SuperSort extends Configured implements Tool {
         }
     }
 
+    public static void SeqGen(String[] args) throws IOException{
+        Configuration conf = new Configuration();
+        FileSystem fs = FileSystem.getLocal(conf);
+        SequenceFile.Writer writer = null;
+        IntWritable key = new IntWritable();
+        IntWritable value = new IntWritable();
+        Path outPath = new Path(args[1]);
+        Path inputPath = new Path(args[0]);
 
+        try{
+            writer = SequenceFile.createWriter(fs, conf, outPath, IntWritable.class, IntWritable.class);
+            FileStatus[] inputFiles = fs.listStatus(inputPath);
+            for(FileStatus fileStatus : inputFiles){
+                FSDataInputStream in = fs.open(fileStatus.getPath());
+                BufferedReader br = new BufferedReader(new InputStreamReader(in));
+                String tmp = null;
+                while ((tmp = br.readLine()) != null) {
+                    String[] kv = tmp.split("\t");
+                    key.set(new Integer(kv[0]));
+                    value.set(new Integer(kv[1]));
+                    writer.append(key, value);
+                }
+                br.close();
+                in.close();
+            }
+        }catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+            IOUtils.closeStream(writer);
+        }
+
+    }
 
     public int run(String[] args) throws Exception {
         if (args.length < 2) {
@@ -72,30 +108,30 @@ public class SuperSort extends Configured implements Tool {
         FileOutputFormat.setOutputPath(job,
                 new Path(args[args.length - 1]));
         job.setNumReduceTasks(5);
-        TotalOrderPartitioner.setPartitionFile(job.getConfiguration(), new Path("part_out"));
-        job.setInputFormatClass(KeyValueTextInputFormat.class);
         job.setMapOutputKeyClass(IntWritable.class);
         job.setMapOutputValueClass(Text.class);
         job.setOutputKeyClass(IntWritable.class);
         job.setOutputValueClass(Text.class);
         job.setJobName("TotalSort");
-
-        InputSampler.Sampler<Text, Text> sampler = new InputSampler.RandomSampler<Text, Text>(0.01, 1000, 100);
-        InputSampler.writePartitionFile(job, sampler);
-        job.setPartitionerClass(TotalOrderPartitioner.class);
-//        job.setPartitionerClass(SuperSortPartitoner.class);
-
+        job.setPartitionerClass(SuperSortPartitoner.class);
         job.setMapperClass(SuperSortMapper.class);
         job.setReducerClass(SuperSortReducer.class);
         return job.waitForCompletion(true) ? 0 : 1;
     }
 
     public static void main(String[] args) throws Exception {
+
         long start=System.currentTimeMillis();
-        int exitCode = ToolRunner.run(new SuperSort(),args);
+        SeqGen(args);
         long end=System.currentTimeMillis();
         System.out.println("job successfully finished in "+ (end-start)+"ms");
-        System.exit(exitCode);
+        return;
+
+//        long start=System.currentTimeMillis();
+//        int exitCode = ToolRunner.run(new SuperSort(),args);
+//        long end=System.currentTimeMillis();
+//        System.out.println("job successfully finished in "+ (end-start)+"ms");
+//        System.exit(exitCode);
     }
 
 
