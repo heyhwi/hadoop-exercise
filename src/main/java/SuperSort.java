@@ -9,6 +9,7 @@ import org.apache.hadoop.mapreduce.Partitioner;
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 import org.apache.hadoop.mapreduce.lib.input.FixedLengthInputFormat;
 import org.apache.hadoop.mapreduce.lib.input.KeyValueTextInputFormat;
+import org.apache.hadoop.mapreduce.lib.input.SequenceFileInputFormat;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.Mapper;
@@ -34,13 +35,18 @@ public class SuperSort extends Configured implements Tool {
             context.write(new IntWritable(Integer.parseInt(tmp[0])),value);
         }
     }
+
+    public static class SuperSortMapper_seq extends Mapper<IntWritable, IntWritable, IntWritable, IntWritable> {
+        @Override
+        public void map(IntWritable key, IntWritable value, Context context) throws IOException, InterruptedException {
+            context.write(key,value);
+        }
+    }
     public static class SuperSortReducer extends Reducer<IntWritable, Text, IntWritable, Text> {
         @Override
         public void reduce(IntWritable key, Iterable<Text> values, Context context) throws IOException, InterruptedException{
             for (Text value : values){
                 String[] tmp = value.toString().split("\t");
-
-//                context.write(value,NullWritable.get());
                 context.write(key,new Text(tmp[1]));
             }
         }
@@ -55,8 +61,20 @@ public class SuperSort extends Configured implements Tool {
                 if(t < step*(i+1))
                     return i;
             }
-
             return 0;
+        }
+    }
+    public static class SuperSortPartitoner_seq extends Partitioner<IntWritable, IntWritable>{
+        @Override
+        public int getPartition(IntWritable key, IntWritable value, int numPartitions){
+            int t = key.get()-1;
+            int step = 100000/numPartitions;
+//            for (int i=0; i<numPartitions; i++){
+//                if(t < step*(i+1))
+//                    return i;
+//            }
+            return t/step;
+
         }
     }
 
@@ -107,31 +125,38 @@ public class SuperSort extends Configured implements Tool {
         }
         FileOutputFormat.setOutputPath(job,
                 new Path(args[args.length - 1]));
+        job.setInputFormatClass(SequenceFileInputFormat.class);
+
         job.setNumReduceTasks(5);
+
+//        job.setMapperClass(SuperSortMapper.class);
+        job.setMapperClass(SuperSortMapper_seq.class);
         job.setMapOutputKeyClass(IntWritable.class);
-        job.setMapOutputValueClass(Text.class);
+//        job.setReducerClass(SuperSortReducer.class);
+        job.setReducerClass(Reducer.class);
+        job.setMapOutputValueClass(IntWritable.class);
         job.setOutputKeyClass(IntWritable.class);
-        job.setOutputValueClass(Text.class);
+        job.setOutputValueClass(IntWritable.class);
         job.setJobName("TotalSort");
-        job.setPartitionerClass(SuperSortPartitoner.class);
-        job.setMapperClass(SuperSortMapper.class);
-        job.setReducerClass(SuperSortReducer.class);
+//        job.setPartitionerClass(SuperSortPartitoner.class);
+        job.setPartitionerClass(SuperSortPartitoner_seq.class);
+
         return job.waitForCompletion(true) ? 0 : 1;
     }
 
     public static void main(String[] args) throws Exception {
 
-        long start=System.currentTimeMillis();
-        SeqGen(args);
-        long end=System.currentTimeMillis();
-        System.out.println("job successfully finished in "+ (end-start)+"ms");
-        return;
-
 //        long start=System.currentTimeMillis();
-//        int exitCode = ToolRunner.run(new SuperSort(),args);
+//        SeqGen(args);
 //        long end=System.currentTimeMillis();
 //        System.out.println("job successfully finished in "+ (end-start)+"ms");
-//        System.exit(exitCode);
+//        return;
+
+        long start=System.currentTimeMillis();
+        int exitCode = ToolRunner.run(new SuperSort(),args);
+        long end=System.currentTimeMillis();
+        System.out.println("job successfully finished in "+ (end-start)+"ms");
+        System.exit(exitCode);
     }
 
 
