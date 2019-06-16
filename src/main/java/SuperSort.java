@@ -4,6 +4,7 @@ import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.NullWritable;
 import org.apache.hadoop.io.Text;
+import org.apache.hadoop.mapreduce.Partitioner;
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 import org.apache.hadoop.mapreduce.lib.input.KeyValueTextInputFormat;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
@@ -28,14 +29,33 @@ public class SuperSort extends Configured implements Tool {
             context.write(new IntWritable(Integer.parseInt(tmp[0])),value);
         }
     }
-    public static class SuperSortReducer extends Reducer<IntWritable, Text, Text, NullWritable> {
+    public static class SuperSortReducer extends Reducer<IntWritable, Text, IntWritable, Text> {
         @Override
         public void reduce(IntWritable key, Iterable<Text> values, Context context) throws IOException, InterruptedException{
             for (Text value : values){
-                context.write(value,NullWritable.get());
+                String[] tmp = value.toString().split("\t");
+
+//                context.write(value,NullWritable.get());
+                context.write(key,new Text(tmp[1]));
             }
         }
     }
+    public static class SuperSortPartitoner extends Partitioner<IntWritable, Text>{
+        @Override
+        public int getPartition(IntWritable key, Text value, int numPartitions){
+            String[] tmp = value.toString().split("\t");
+            int t = Integer.parseInt(tmp[0]);
+            int step = 100000/numPartitions;
+            for (int i=0; i<numPartitions; i++){
+                if(t < step*(i+1))
+                    return i;
+            }
+
+            return 0;
+        }
+    }
+
+
 
     public int run(String[] args) throws Exception {
         if (args.length < 2) {
@@ -51,22 +71,24 @@ public class SuperSort extends Configured implements Tool {
         }
         FileOutputFormat.setOutputPath(job,
                 new Path(args[args.length - 1]));
-        job.setInputFormatClass(KeyValueTextInputFormat.class);
-        job.setNumReduceTasks(4);
+        job.setNumReduceTasks(5);
+//        TotalOrderPartitioner.setPartitionFile(job.getConfiguration(), new Path("part_out"));
+//        job.setInputFormatClass(KeyValueTextInputFormat.class);
+        job.setMapOutputKeyClass(IntWritable.class);
+        job.setMapOutputValueClass(Text.class);
+        job.setOutputKeyClass(IntWritable.class);
+        job.setOutputValueClass(Text.class);
+        job.setJobName("TotalSort");
+
+//        InputSampler.Sampler<Text, Text> sampler = new InputSampler.RandomSampler<Text, Text>(0.01, 1000, 100);
+//        InputSampler.writePartitionFile(job, sampler);
+        job.setPartitionerClass(SuperSortPartitoner.class);
+
+
+
 
         job.setMapperClass(SuperSortMapper.class);
         job.setReducerClass(SuperSortReducer.class);
-        job.setMapOutputKeyClass(IntWritable.class);
-        job.setMapOutputValueClass(Text.class);
-        job.setOutputKeyClass(Text.class);
-        job.setOutputValueClass(NullWritable.class);
-        job.setJobName("TotalSort");
-
-        TotalOrderPartitioner.setPartitionFile(conf, new Path( "_partitions"));
-        InputSampler.RandomSampler<Text, Text> sampler = new InputSampler.RandomSampler<Text, Text>(0.01, 1000, 100);
-        InputSampler.writePartitionFile(job, sampler);
-
-        job.setPartitionerClass(TotalOrderPartitioner.class);
         return job.waitForCompletion(true) ? 0 : 1;
     }
 
@@ -77,6 +99,7 @@ public class SuperSort extends Configured implements Tool {
         System.out.println("job successfully finished in "+ (end-start)+"ms");
         System.exit(exitCode);
     }
+
 
 
 }

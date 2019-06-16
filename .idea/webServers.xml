@@ -10,6 +10,14 @@
           <option name="port" value="22" />
         </fileTransfer>
       </webServer>
+      <webServer id="3f44bd2f-95c8-4c6a-8084-7e3f496241ed" name="gcp" url="http://gcp.heyhwi.com">
+        <fileTransfer host="gcp.heyhwi.com" port="22" rootFolder="/home/cloud" accessType="SFTP">
+          <advancedOptions>
+            <advancedOptions dataProtectionLevel="Private" passiveMode="true" shareSSLContext="true" />
+          </advancedOptions>
+          <option name="port" value="22" />
+        </fileTransfer>
+      </webServer>
     </option>
   </component>
 </project>
