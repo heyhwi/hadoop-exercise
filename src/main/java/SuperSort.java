@@ -72,20 +72,18 @@ public class SuperSort extends Configured implements Tool {
         FileOutputFormat.setOutputPath(job,
                 new Path(args[args.length - 1]));
         job.setNumReduceTasks(5);
-//        TotalOrderPartitioner.setPartitionFile(job.getConfiguration(), new Path("part_out"));
-//        job.setInputFormatClass(KeyValueTextInputFormat.class);
+        TotalOrderPartitioner.setPartitionFile(job.getConfiguration(), new Path("part_out"));
+        job.setInputFormatClass(KeyValueTextInputFormat.class);
         job.setMapOutputKeyClass(IntWritable.class);
         job.setMapOutputValueClass(Text.class);
         job.setOutputKeyClass(IntWritable.class);
         job.setOutputValueClass(Text.class);
         job.setJobName("TotalSort");
 
-//        InputSampler.Sampler<Text, Text> sampler = new InputSampler.RandomSampler<Text, Text>(0.01, 1000, 100);
-//        InputSampler.writePartitionFile(job, sampler);
-        job.setPartitionerClass(SuperSortPartitoner.class);
-
-
-
+        InputSampler.Sampler<Text, Text> sampler = new InputSampler.RandomSampler<Text, Text>(0.01, 1000, 100);
+        InputSampler.writePartitionFile(job, sampler);
+        job.setPartitionerClass(TotalOrderPartitioner.class);
+//        job.setPartitionerClass(SuperSortPartitoner.class);
 
         job.setMapperClass(SuperSortMapper.class);
         job.setReducerClass(SuperSortReducer.class);
